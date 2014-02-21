@@ -1,0 +1,653 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Marcel Müller's REXX utilities</title>
+</head>
+<body>
+<h1>REXX utilities beyond REXXUTIL
+for OS/2</h1>
+<p>
+This is a (growing) collection of miscellaneous REXX utility functions
+and code fragments.
+Some of them are coded in REXX others in C.
+</p>
+<p>Version: 0.31 (Jan. 6th, 2006)</p>
+<a href="#usage">&#8594;&nbsp;Quick guide</a>
+<a href="#download">&#8594;&nbsp;Download</a>
+<a href="#referenceRX">&#8594;&nbsp;Reference&nbsp;(REXX)</a>
+<a href="#referenceC">&#8594;&nbsp;Reference&nbsp;(C&nbsp;DLL)</a>
+<a href="#history">&#8594;&nbsp;History</a>
+<a href="#contact">&#8594;&nbsp;Contact</a>
+<p><code>This
+font </code> indicates things you
+can type in.<br>
+<code><var>Italic</var><i>
+</i></code>in
+addition indicates parameters, which have to be replaced by meaningful
+values.<br>
+Parameters in [<var><code>braces</code></var>]
+are optional.
+</p>
+<hr>
+<h2><a name="usage"></a>Quick
+guide</h2>
+<ul>
+  <li>Copy the <tt>RXMMUTL.DLL</tt>
+somewhere in your <tt>LIBPATH</tt>.</li>
+  <li>Be sure to have the EMX
+runtime library, <tt>EMX.DLL</tt>
+(preferably version 0.9d) somewhere
+in your <tt>LIBPATH</tt>.</li>
+  <li>Register the DLL's functions
+once from your REXX scripts:
+    <pre>CALL RxFuncAdd 'MMLoadFuncs', 'RXMMUTL', 'MMLoadFuncs'<br>CALL MMLoadFuncs</pre>
+  </li>
+  <li>Copy REXX functions from <tt>rxmmutl.cmd</tt>
+as you need them.</li>
+</ul>
+<hr>
+<h2><a name="download"></a><font color="#ff0000">Download</font></h2>
+This utility functions are <b>freeware</b>.
+<p>ZIP
+file with source and this
+guide:
+<a href="rxmmutl.zip">Version&nbsp;0.31</a>
+</p>
+<hr>
+<h2><a name="referenceRX"></a><code>RXMMUTL.CMD</code>
+Reference (REXX-Functions)</h2>
+All of the following functions are part of the script <tt>RXMMUTL.CMD</tt>.
+You may copy them into your own REXX scripts.
+<p><tt><a href="#ToUnixTime">ToUnixTime</a></tt><tt>
+<a href="#ToGmTime">ToGmTime</a></tt><tt>
+<a href="#UnixTime">UnixTime</a>
+<a href="#StringMatchQ">StringMatchQ</a>
+<a href="#StringReplace">StringReplace</a> <a href="#QSort">QSort</a>
+</tt></p>
+<h4><i>Parse
+command line</i></h4>
+<blockquote>
+This code fragment will split a command line string into arguments,
+properly handling and removing quotes (<code>"</code>).
+  <pre>params = STRIP(ARG(1))<br>DO WHILE params \= ''<br> IF LEFT(params,1) = '"' THEN DO<br> PARSE VAR params '"'param'"'params<br> params = STRIP(params, 'L')<br> END<br> ELSE<br> PARSE VAR params param params<br> /* param is the next parameter to process ... */<br> IF (LEFT(param, 1) = '/') | (LEFT(param, 1) = '-') THEN<br> SELECT<br> /* parsing options ... */<br><br> OTHERWISE<br> SAY "illegal option '"param"'"<br> END<br><br> ELSE DO<br> /* any other arg ... */<br><br> END<br> END</pre>
+</blockquote>
+<h4><a name="ToUnixTime"></a><code>ToUnixTime(<i>year,
+mon, day, hour, min, sec</i>)</code></h4>
+<blockquote>
+Convert time to Unix format (seconds since Jan. 01, 1970 0:00).
+  <dl>
+    <dt><code><i>year</i></code></dt>
+    <dd>Year (4 digits ! E.g. 1997)</dd>
+    <dt><code><i>mon</i></code> </dt>
+    <dd>Month (1-12)</dd>
+    <dt><code><i>day</i></code> </dt>
+    <dd>Day of month (1-31)</dd>
+    <dt><code><i>hour</i></code> </dt>
+    <dd>Hours (0-23)</dd>
+    <dt><code><i>min</i></code> </dt>
+    <dd>Minutes (0-59)</dd>
+    <dt><code><i>sec</i></code> </dt>
+    <dd>Seconds (0-59)</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Unix time</dd>
+  </dl>
+  <font size="-1">Notes:
+  <ol>
+    <li>Be sure to set <code>NUMERIC
+DIGITS</code> at least to 10.
+The default of 9 overflowed on 9.&nbsp;Sep.&nbsp;2001 1:46:40
+(AM).</li>
+    <li>Be careful with the
+function arguments as there are no consistency checks at all.</li>
+    <li>This
+function will fail on 1st Mar. 2100 and later because the century
+exception for the gap day 29th Feb. is not implemented.</li>
+    <li>This
+function will ignore
+time zones. It will only work correctly if the time is GMT. </li>
+  </ol>
+  </font></blockquote>
+<h4><a name="ToGmTime"></a><code>ToGmTime(<var>time</var>)</code></h4>
+<blockquote>Convert Unix time to
+time structure. Similar to the C runtime function gmtime().<br>
+  <dl>
+    <dt><code><var>time</var></code></dt>
+    <dd>Unix time stamp in seconds
+since Jan. 01, 1970 0:00.</dd>
+    <dt><var>Return
+value</var></dt>
+    <dd>Structure with the
+following space delimited values:<br>
+      <table border="1" cellpadding="3" cellspacing="0">
+        <tbody>
+          <tr>
+            <th align="left">word</th>
+            <th align="left">name</th>
+            <th align="left">description</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>sec</td>
+            <td>seconds after the
+minute [0-59]</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>min</td>
+            <td>minutes after the
+hour [0-59]</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>hour</td>
+            <td>hours since
+midnight [0-23]</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>mday</td>
+            <td>day of the month
+[1-31]</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>mon</td>
+            <td>months since
+January [0-11] - note the zero based
+offset like in the C structure <code>tm</code>!</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>year</td>
+            <td>years since 1900</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>wday</td>
+            <td>days since Sunday
+[0-6]</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>yday</td>
+            <td>days since January
+1 [0-365]</td>
+          </tr>
+        </tbody>
+      </table>
+    </dd>
+  </dl>
+  <font size="-1">Notes:
+  <ol>
+    <li>Be sure to set <code>NUMERIC
+DIGITS</code> at least to 10.
+The default of 9 overflowed on 9.&nbsp;Sep.&nbsp;2001 1:46:40
+(AM).</li>
+    <li>This function will fail on
+1st Mar. 2100 and later because the century exception for the non leap
+year 2100 is not implemented.
+    </li>
+    <li>This
+function will ignore
+time zones. It will always assume GMT.</li>
+  </ol>
+  </font></blockquote>
+<h4><a name="UnixTime"></a><code>UnixTime</code></h4>
+<blockquote>
+Get current time in Unix time format (seconds since Jan. 01, 1970
+0:00).
+  <dl>
+    <dt><i>Parameter</i></dt>
+    <dd>None</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Current time (Unix format)</dd>
+  </dl>
+  <font size="-1">This is
+similar to the C function <code>time(NULL)</code>.
+However, the result is localtime rather than GMT.</font>
+</blockquote>
+<h4><a name="StringMatchQ"></a><code>StringMatchQ(<i>string,
+template</i>)</code></h4>
+<blockquote> Check if <code><i>string</i></code>
+matches a template string containing wildcard characters (<code>*</code>,<code>?</code>).
+  <dl>
+    <dt><code><i>string</i></code> </dt>
+    <dd>String to check</dd>
+    <dt><code><i>template</i></code> </dt>
+    <dd>Template string<br>
+      <code>?</code>
+represents any character.<br>
+      <code>*</code>
+represents any sequence of zero or more characters.</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd><code>1</code>
+(true) string matched<br>
+      <code>0</code>
+(false) string does not match</dd>
+  </dl>
+</blockquote>
+<h4><a name="StringReplace"></a><code>StringReplace(<i>string,
+find, replace</i></code>[<code><i>,
+find, replace</i></code>[<code>,</code>...]<code>)</code></h4>
+<blockquote> Replace substrings.
+  <dl>
+    <dt><code><i>string</i></code> </dt>
+    <dd>String to modify</dd>
+    <dt><code><i>find</i></code> </dt>
+    <dd>Find <code><i>find</i></code>
+and ...</dd>
+    <dt><code><i>replace</i></code> </dt>
+    <dd>... replace with <code><i>replace</i></code></dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Modified string</dd>
+  </dl>
+  <font size="-1">This is
+the same than the
+Object REXX
+function <code>CHANGESTR(<var>find,
+string, replace</var>)</code>,
+if you specify only one replacement rule and if you have <em>Object
+REXX</em>.</font></blockquote>
+<h4><code>CALL Qsort stem</code>[<code>, <i>first</i></code>][<code>, <i>last</i></code>]</h4>
+<blockquote>Sort a stemmed variable.<br>
+  <dl>
+    <dt><i><code>stem</code></i></dt>
+    <dd>Name of the stemmed variable.</dd>
+    <dt><i><code>first</code></i></dt>
+    <dd>First item in the stemmed variable to sort. By default <code>0</code>.</dd>
+    <dt><i><code>last</code></i></dt>
+    <dd>Last item in the stemmed variable to sort. By default <code>stem.0</code>.</dd>
+  </dl>
+The function destroys the variable <code>STEM</code> in the callers
+scope.</blockquote>
+<hr>
+<h2><a name="referenceC"></a><code>RXMMUTL.DLL</code>
+Reference (external C Functions)</h2>
+<p><tt><a href="#MMTranslateCp">MMTranslateCp</a>
+<a href="#MMUpper">MMUpper</a>
+<a href="#MMTime">MMTime</a>
+<a href="#MMSetFileSize">MMSetFileSize</a>
+<a href="#MMFileMove">MMFileMove</a>
+<a href="#MMFileIn">MMFileIn</a>
+<a href="#MMHash">MMHash</a>
+<a href="#MMIniOpen">MMIniOpen</a></tt><tt>
+<a href="#MMIniClose">MMIniClose</a></tt><tt>
+<a href="#MMIniQuery">MMIniQuery</a></tt><tt>
+<a href="#MMIniWrite">MMIniWrite</a>
+</tt></p>
+<h4><a name="MMLoadFuncs"></a><code>MMLoadFuncs</code></h4>
+<blockquote>
+Register any function in <code>rxmmutl.dll</code>
+(except for MMLoadFuncs, of course).
+  <dl>
+    <dt><i>Parameter</i></dt>
+    <dd>None</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Empty string</dd>
+  </dl>
+  <font size="-1">Note: You
+usually want to register this function first:
+  <pre>IF RxFuncAdd("MMLoadFuncs", "RxMMutl", "MMLoadFuncs") = 0 THEN<br> CALL MMLoadFuncs </pre>
+  </font></blockquote>
+<h4><a name="MMDropFuncs"></a><code>MMDropFuncs</code></h4>
+<blockquote>
+Deregister all functions from <code>rxmmutl.dll</code>.
+  <dl>
+    <dt><i>Parameter</i></dt>
+    <dd>None</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Empty string</dd>
+  </dl>
+</blockquote>
+<h4><a name="MMTranslateCp"></a><code>MMTranslateCp(<i>string</i>,</code>
+[<code><i>sourceCP</i></code>]<code>,</code>
+[<code><i>destinationCP</i></code>]<code>,</code>
+[<code><i>substitutionchar</i></code>]<code>)</code></h4>
+<blockquote> Translate string from
+one code page to another.<br>
+The source and destination code page is not restricted to the ones
+prepared in the <code>CONFIG.SYS</code>
+with the <code>CODEPAGE</code>
+statement.
+See description of <code>WinCpTranslateChar</code>
+for a list of supported code pages.
+  <dl>
+    <dt><code><i>string</i></code></dt>
+    <dd>String to translate</dd>
+    <dt><code><i>sourceCP</i></code> </dt>
+    <dd>Source code page<br>
+If omitted the current active code page is used.</dd>
+    <dt><code><i>destinationCP</i></code>
+    </dt>
+    <dd>Destination code page<br>
+If committed the current active code page is used.</dd>
+    <dt><code><i>substitutionchar</i></code>
+    </dt>
+    <dd>Substitution character for
+untranslatable characters.<br>
+This argument must be at most one character in length.
+By default <code>D2C(255)</code>
+is used.
+The null string, <code>''</code>,
+has a special meaning:
+it suppresses the conversion of untranslatable characters at all.
+You should be careful with this option, because it usually results in
+bogus characters in the destination code page.
+However, it may have useful side effects.</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Translated string</dd>
+  </dl>
+</blockquote>
+<h4><a name="MMUpper"></a><code>MMUpper(<i>string</i>,</code>
+[<code><i>codepage</i></code>]<code>,</code>
+[<code><i>country</i></code>]<code>)</code></h4>
+<blockquote> Translate string to
+uppercase.<br>
+In comparison to <code>TRANSLATE(<i>string</i>)</code>
+this takes care of special characters like umlauts.
+  <dl>
+    <dt><code><i>string</i></code></dt>
+    <dd>String to translate</dd>
+    <dt><code><i>codepage</i></code> </dt>
+    <dd>code page<br>
+If committed the current active code page is used.</dd>
+    <dt><code><i>country</i></code> </dt>
+    <dd>Country code<br>
+If committed the current country code defined in the <code>CONFIG.SYS</code>
+is used.
+I don't really know the influence of this parameter. Normally you can
+drop it.</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Uppercase string</dd>
+  </dl>
+  <font size="-1">Note:
+This function is similar to the in Classic REXX undocumented
+REXXUTIL function <code>SysMapCase</code>. </font></blockquote>
+<h4><a name="MMTime"></a><code>MMTime</code></h4>
+<blockquote>
+Return time in UNIX time format (seconds since 01.01.1970 0:00). This
+is the return value of the C library function <code>time(NULL)</code>.
+  <dl>
+    <dt><i>Parameter</i></dt>
+    <dd>None</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>UNIX time</dd>
+  </dl>
+</blockquote>
+<h4><a name="MMSetFileSize"></a><code>MMSetFileSize(<i>filename,
+newsize</i>)</code></h4>
+<blockquote> Modify size of file.
+The file can be
+truncated or extended.
+  <dl>
+    <dt><code><i>filename</i></code></dt>
+    <dd>Name of the file to modify</dd>
+    <dt><code><i>newsize</i></code> </dt>
+    <dd>New size of the file in
+bytes</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd><code>0</code>
+- file size changed successfully<br>
+      <i>otherwise</i>
+- OS/2 error code</dd>
+  </dl>
+</blockquote>
+<h4><a name="MMFileMove"></a><code>MMFileMove(<i>oldname,
+newname</i>)</code></h4>
+<blockquote> Move and/or rename a
+file or directory.
+  <dl>
+    <dt><code><i>oldname</i></code></dt>
+    <dd>Current name of the file
+or directory to move/rename</dd>
+    <dt><code><i>newname</i></code> </dt>
+    <dd>New path and/or name of
+the file or directory
+(The drive letter must be omitted or the same as before)</dd>
+    <dt><i>Return
+value</i></dt>
+    <dd><code>0</code>
+- file moved/renamed successfully<br>
+      <i>otherwise</i>
+- OS/2 error code</dd>
+  </dl>
+</blockquote>
+<h4><a name="MMFileIn"></a><code>MMFileIn(<var>filename</var>)</code></h4>
+<blockquote>
+Read an entire file into a symbol.
+  <dl>
+    <dt><code><var>filename</var></code></dt>
+    <dd>Name of the file to read.</dd>
+    <dt><var>Return
+value</var></dt>
+    <dd>File content or an empty
+string in case of an error.</dd>
+  </dl>
+This is roughly the same action as the REXX instructions:
+  <pre>CALL STREAM <var>filename</var>, 'c', 'open read'<br>result = CHARIN(<var>filename</var>, , STREAM(<var>filename</var>, 'c', 'query size'))<br>CALL STREAM <var>filename</var>, 'c', 'close'</pre>
+But in contrast to the above instructions there is no memory leak! <br>
+There is no way to distinguish between an empty file and an error.
+Furthermore you cannot get any details about the error occurred.
+</blockquote>
+<h4><a name="MMHash"></a><code>MMHash(<i>data,
+hashtype</i>)</code></h4>
+<blockquote> Create a hash value
+from data.
+  <dl>
+    <dt><code><i>data</i></code></dt>
+    <dd>Input data</dd>
+    <dt><code><i>hashtype</i></code> </dt>
+    <dd>One of: <code>Adler32</code>, <code>CRC32</code>,
+      <code>HAVAL</code>, <code>MD2</code>, <code>MD4</code>,
+      <code>MD5</code>, <code>RIPEMD160</code>,
+      <code>SHA</code>, <code>SHA256</code>, <code>SHA384</code>,
+      <code>SHA512</code>, <code>Tiger</code></dd>
+    <dt><i>Return
+value</i></dt>
+    <dd>Hash value<br>
+The length of the hash value depends on the hash type.</dd>
+  </dl>
+</blockquote>
+<h3>Profile functions</h3>
+<p>The profile functions provided by <tt>RXMMUTL</tt>
+are
+significantly superior to SysIni from <tt>REXXUTIL</tt>.
+The main
+advantage is the speed when accessing user defined profiles that are
+not open by another application. This is because SysIni always opens
+and closes the profile on each call. Furthermore there are no reserved
+strings like <samp>'DELETE:'</samp> that may be
+interpreted in an
+unexpected way.
+</p>
+<h4><a name="MMIniOpen"></a><code>MMIniOpen(<var>profile</var>)</code></h4>
+<blockquote>
+Open an OS/2 profile like <tt>SysIni</tt>
+does, but in contrast to the latter one the profile is kept open
+until you call <a href="#MMIniClose"><tt>MMIniClose</tt></a>
+or your REXX application terminates.
+This is significantly faster than <tt>SysIni</tt>
+if you access the profile multiple times.
+  <dl>
+    <dt><code><var>profiledata</var></code></dt>
+    <dd>profile name</dd>
+    <dt><var>Return
+value</var></dt>
+    <dd>OS/2 PM error code or <code>0</code>
+in case of success.</dd>
+  </dl>
+Remark: this function is even useful when the <tt>REXXUTIL</tt>
+function <tt>SysIni</tt>
+is used in the application, because once, the profile is opened by <tt>MMIniOpen</tt>
+  <tt>SysIni</tt>
+is faster by a factor.
+</blockquote>
+<h4><a name="MMIniClose"></a><code>MMIniClose(<var>profile</var>)</code></h4>
+<blockquote>
+Close an OS/2 profile. This will never affect handles from another REXX
+application even if they are related to the same file.<br>
+  <dl>
+    <dt><code><var>profile</var></code></dt>
+    <dd>profile
+name</dd>
+    <dt><var>Return
+value</var></dt>
+    <dd>OS/2 PM error code or <code>0</code>
+in case of success.</dd>
+  </dl>
+</blockquote>
+<h4><a name="MMIniQuery"></a><code>MMIniQuery(<var>profile</var>,
+</code>[<code><var>application</var>,
+</code>[<code><var>key</var></code>]]<code>)</code></h4>
+<blockquote>
+Read data from an OS/2 profile. If the profile
+is not already opened <tt>MMIniQuery</tt>
+opens the profile like <a href="#MMIniOpen"><tt>MMIniOpen</tt></a>
+has been executed before. The Profile is not closed after execution.
+The profile will be automatically closed when your Application (REXX
+instance) terminates. Use <a href="#MMIniClose"><tt>MMIniClose</tt></a>
+to forcibly close the profile.<br>
+  <dl>
+    <dt><code><var>profile</var></code></dt>
+    <dd>profile name</dd>
+    <dt><code><var>application</var></code></dt>
+    <dd>Name of the application
+section in the profile. If this (and the next) parameter is omitted a
+list of all
+existing applications in the profile is returned.
+    </dd>
+    <dt><var>key</var></dt>
+    <dd>Name of the key to query.
+If this parameter is omitted a list of all existing keys for the
+application is returned.</dd>
+    <dt><var>Return
+value</var></dt>
+    <dd>Value of the requested
+property or list of values (depending on <var>application</var>
+and <var>key</var>).
+The items in the list are separated by NULL characters. If an error
+occurred or the requested property does not exist the function returns
+an empty string. There is no way to distinguish between an error and an
+empty value or an empty item collection respectively.
+    </dd>
+  </dl>
+</blockquote>
+<h4><a name="MMIniWrite"></a><code>MMIniWrite(<var>profile</var>,
+<var>application</var>,
+</code>[<var></var><code><var>key</var>,
+</code>[<var></var><code><var>value</var></code>]]<code>)</code></h4>
+<blockquote>
+Write data into an OS/2 profile. If the profile
+is not already opened <tt>MMIniWrite</tt>
+opens the profile like <a href="index.html#MMIniOpen"><tt>MMIniOpen</tt></a>
+has been executed before. The Profile is not closed after execution.
+The profile will be automatically closed when your Application (REXX
+instance) terminates. Use <a href="index.html#MMIniClose"><tt>MMIniClose</tt></a>
+to forcibly close the profile.
+  <dl>
+    <dt><code><var>profile</var></code></dt>
+    <dd>profile name</dd>
+    <dt><code><var>application</var></code></dt>
+    <dd>Name of the application
+section in the profile.
+    </dd>
+    <dt><var>key</var></dt>
+    <dd>Name of the key to query.
+If this parameter is omitted all keys for the application are deleted.
+    </dd>
+    <dt><code><var>value</var></code></dt>
+    <dd>Value of the key to set.
+If this parameter is omitted the specified key is deleted. Note that an
+empty string will not delete the key.
+    </dd>
+    <dt><var>Return
+value</var></dt>
+    <dd>OS/2 PM error code or <code>0</code>
+in case of success.<br>
+E.g. <samp>267012</samp>
+= <samp>X2D(41304)</samp>,
+i.e. severity (high order word) = <samp>4</samp>
+= warning and error (low order word) = <samp>X2D(1304)</samp>
+= not found (while deleting a key).
+    </dd>
+  </dl>
+</blockquote>
+<hr>
+<h2><a name="history"></a>History</h2>
+<p>
+<b>Version 0.31</b>
+(Jan. 6, 2006)
+</p>
+<ul>
+  <li>Added <a href="#ToGmTime"><tt>ToGmTime(time<var></var>)</tt></a>
+to <tt>rxmmutl.cmd</tt></li>
+  <li>Added <a href="index.html#MMIniOpen"><tt>MMIniQuery(<var>profile</var>,<var>application</var>,<var>key</var>)</tt></a>
+and <a href="index.html#MMIniClose"><tt>MMIniWrite(<var>profile</var>,<var>application</var>,<var>key</var>,<var>value</var>)</tt></a>
+to <tt>rxmmutl.dll</tt></li>
+</ul>
+<p><b>Version
+0.3</b>
+(May 31, 2003)
+</p>
+<ul>
+  <li>Added <a href="#MMFileIn"><tt>MMFileIn(<var>filename</var>)</tt></a>
+to <tt>rxmmutl.dll</tt></li>
+  <li>Added <a href="#MMIniOpen"><tt>MMIniOpen(<var>profile</var>)</tt></a>
+and <a href="#MMIniClose"><tt>MMIniClose(<var>profile</var>)</tt></a>
+to <tt>rxmmutl.dll</tt></li>
+</ul>
+<b>Version 0.2</b>
+(Aug 4, 2002)
+<ul>
+  <li>Added <a href="#MMHash"><tt>MMHash(<var>data,
+hashtype</var>)</tt></a>
+to <tt>rxmmutl.dll</tt>,
+uses <a href="http://www.cryptopp.com">Crypto++</a>
+by <a href="http://www.weidai.com">Wei
+Dai</a>.</li>
+</ul>
+<b>Version 0.1</b>
+(first release)
+<!--HR> <A NAME="todo"> <H3>ToDo</H3> <DL> <DT><B>&nbsp;&middot; Upload feature</B> (in progress)</DT> <DD>If information is available in the CDP.INI but not at the CDDB server a upload might be performed. Hot candidates are previously failed CDDB queries.</DD> </DL> </A-->
+<hr>
+<h2><a name="build"></a>Build
+instructions</h2>
+<p>
+Use the included <tt>Makefile</tt>
+to build <tt>RXMMUTL.DLL</tt>.
+I used GCC 3.2.2 for EMX OS/2.
+However, it should work with other C++ compilers too.
+There should be no GCC specific elements in the code.
+In contrast, the makefile contains GCC specific parameters.
+</p>
+<p>Since version 0.2 you must have
+<a href="http://www.cryptopp.com">libcryptopp</a>,
+which is not included in this package.
+However, if you don't want to include this bulky library
+simply remove the compile time option <code>-DHAVE_CRYPTLIB</code>.
+(See the comment in the makefile.)
+Of course, the relating functions will not work in this case.
+(currently only <tt>MMHash</tt>)
+</p>
+<hr>
+<h2><a name="contact"></a>Contact</h2>
+<p>Suggestions, help, complaints
+(but not too much:-):&nbsp;<img
+ alt="Mail address: mueller-at-maazl-dot-de" src="m.png" align="middle"
+ height="14" width="131">
+</p>
+<p>Original homepage: <a
+ href="http://www.maazl.de/project/rxmmutl/index.html">http://www.maazl.de/project/rxmmutl/index.html</a></p>
+<hr>
+</body>
+</html>

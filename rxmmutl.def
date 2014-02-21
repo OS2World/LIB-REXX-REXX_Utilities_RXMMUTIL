@@ -1,0 +1,21 @@
+LIBRARY RXMMUTL INITINSTANCE TERMINSTANCE
+; INITINSTANCE LONGNAMES
+PROTMODE
+DESCRIPTION 'REXX utilities by Marcel MÅller (C) 2001-2003'
+DATA MULTIPLE NONSHARED
+STACKSIZE 65536
+EXPORTS
+     MMLOADFUNCS        = MMLoadFuncs       @1
+     MMDROPFUNCS        = MMDropFuncs       @2
+     MMTRANSLATECP      = MMTranslateCp     @3
+     MMUPPER            = MMUpper           @4
+     MMTIME             = MMTime            @5
+     MMSETFILESIZE      = MMSetFileSize     @6
+     MMFILEMOVE         = MMFileMove        @7
+     MMHASH             = MMHash            @8
+     MMINIOPEN          = MMIniOpen         @9
+     MMFILEIN           = MMFileIn          @10
+     MMINICLOSE         = MMIniClose        @11
+     MMINIQUERY         = MMIniQuery        @12
+     MMINIWRITE         = MMIniWrite        @13
+
